@@ -11,8 +11,10 @@ export function SocketProvider({ children }) {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
-      transports: ['websocket']
+    const apiURL = import.meta.env.VITE_API_URL || 'https://livecart-hgcs.onrender.com'
+    socketRef.current = io(apiURL, {
+      transports: ['websocket'],
+      reconnectionAttempts: 5
     })
     socketRef.current.on('connect', () => setReady(true))
     if (user) socketRef.current.emit('user:online', user._id)
