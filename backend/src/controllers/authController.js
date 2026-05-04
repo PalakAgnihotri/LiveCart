@@ -33,7 +33,11 @@ exports.register = async (req, res) => {
     const user = await User.create(data);
     res.status(201).json({ token: token(user._id), user: sanitize(user) });
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    console.error('Registration Error:', err);
+    if (err.code === 11000) {
+      return res.status(400).json({ message: 'Email already exists' });
+    }
+    res.status(500).json({ message: 'Registration failed', error: err.message });
   }
 };
 
