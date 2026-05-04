@@ -31,6 +31,15 @@ export default function StreamStudio() {
       setStream(r.data)
       setPinnedId(r.data.pinnedProduct?._id || null)
       setIsLive(r.data.status === 'live')
+      
+      // Auto-join socket room if already live (handles page refresh)
+      if (r.data.status === 'live') {
+        emit('stream:join', { 
+          roomId: r.data.roomId, 
+          userId: user._id, 
+          userName: user.name + ' (Seller)' 
+        })
+      }
     }).catch(() => navigate('/seller/streams'))
   }, [id])
 
