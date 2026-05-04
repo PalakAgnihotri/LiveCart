@@ -49,6 +49,11 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`LiveCart server on port ${PORT}`));
 
 console.log('Connecting to:', process.env.MONGO_URI);
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 5000,
+})
+  .then(() => console.log('MongoDB connected successfully to Atlas'))
+  .catch(err => {
+    console.error('CRITICAL: MongoDB connection failed.');
+    console.error('Error Details:', err.message);
+  });
