@@ -36,32 +36,37 @@ export default function StreamStudio() {
 
   // Start camera
   useEffect(() => {
+    let active = true
     const startCamera = async () => {
+      console.log('Attempting to start camera...')
       try {
         const media = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        streamRef.current = media
-        setStreamState(media) // Using state to trigger re-render for the video element
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = media
+        if (!active) {
+          media.getTracks().forEach(t => t.stop())
+          return
         }
+        streamRef.current = media
+        setStreamState(media)
+        console.log('Camera started successfully')
       } catch (err) { 
-        console.error('Camera Error:', err)
-        toast.error('Camera/mic access denied') 
+        console.error('CRITICAL: Camera Error:', err)
+        toast.error('Could not access camera/mic. Please check permissions.') 
       }
     }
     startCamera()
 
     return () => {
+      active = false
       streamRef.current?.getTracks().forEach(t => t.stop())
     }
   }, [])
 
-  // Secondary check to ensure srcObject is set if the component re-renders
+  // Assign stream to video element when ready
   useEffect(() => {
-    if (localVideoRef.current && streamRef.current) {
-      localVideoRef.current.srcObject = streamRef.current
+    if (localVideoRef.current && streamState) {
+      localVideoRef.current.srcObject = streamState
     }
-  }, [localVideoRef.current, isLive])
+  }, [streamState])
 
   // Socket listeners
   useEffect(() => {
