@@ -66,6 +66,7 @@ function AppRoutes() {
           <Route path="/seller"                   element={<Guard role="seller"><SellerDashboard /></Guard>} />
           <Route path="/seller/streams"            element={<Guard role="seller"><SellerStreams /></Guard>} />
           <Route path="/seller/streams/create"     element={<Guard role="seller"><CreateStream /></Guard>} />
+          <Route path="/seller/streams/:id"        element={<Guard role="seller"><StreamStudio /></Guard>} />
           <Route path="/seller/streams/:id/studio" element={<Guard role="seller"><StreamStudio /></Guard>} />
           <Route path="/seller/products"           element={<Guard role="seller"><SellerProducts /></Guard>} />
           <Route path="/seller/orders"             element={<Guard role="seller"><SellerOrders /></Guard>} />

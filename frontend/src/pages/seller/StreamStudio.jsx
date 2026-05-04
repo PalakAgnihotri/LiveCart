@@ -173,8 +173,27 @@ export default function StreamStudio() {
         </div>
 
         {/* Local video preview */}
-        <div className="relative bg-black aspect-video flex items-center justify-center">
-          <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+        <div className="relative bg-black aspect-video flex items-center justify-center overflow-hidden">
+          {streamState ? (
+            <video 
+              ref={localVideoRef} 
+              autoPlay 
+              playsInline 
+              muted 
+              className="w-full h-full object-cover scale-x-[-1]"
+              onLoadedMetadata={(e) => e.target.play()}
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+              <button 
+                onClick={() => window.location.reload()}
+                className="text-xs text-violet-400 hover:text-violet-300 underline"
+              >
+                Camera not loading? Click to refresh
+              </button>
+            </div>
+          )}
           <div className="absolute bottom-4 left-4 text-xs bg-black/60 px-2 py-1 rounded text-white/60">
             📷 Your preview (mirrored)
           </div>
