@@ -14,11 +14,22 @@ const { socketHandler } = require('./utils/socketHandler');
 
 const app    = express();
 const server = http.createServer(app);
-const io     = new Server(server, {
-  cors: { origin: process.env.CLIENT_URL, methods: ['GET', 'POST'] }
-});
+const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174'];
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  credentials: true
+};
 
-app.use(cors({ origin: process.env.CLIENT_URL }));
+const io = new Server(server, { cors: corsOptions });
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Attach io to every request so controllers can emit
@@ -37,6 +48,7 @@ socketHandler(io);
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`LiveCart server on port ${PORT}`));
 
+console.log('Connecting to:', process.env.MONGO_URI);
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
