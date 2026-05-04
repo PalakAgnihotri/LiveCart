@@ -34,41 +34,25 @@ exports.socketHandler = (io) => {
       // Notify room of new viewer count
       io.to(roomId).emit('stream:viewerCount', count);
 
-      // Announce join in chat
-      io.to(roomId).emit('stream:chat', {
-        type:    'system',
-        message: `${userName} joined the stream`,
-        time:    new Date(),
-      });
+      // Notify seller to send a WebRTC offer to this new viewer
+      socket.to(roomId).emit('webrtc:request-offer', { viewerId: socket.id });
     });
 
     // ── Leave stream room ──
     socket.on('stream:leave', async ({ roomId, userName }) => {
       socket.leave(roomId);
       roomViewers.get(roomId)?.delete(socket.id);
-
       const count = roomViewers.get(roomId)?.size || 0;
-
       try {
         await Stream.findOneAndUpdate({ roomId }, { viewerCount: count });
       } catch {}
-
       io.to(roomId).emit('stream:viewerCount', count);
-      io.to(roomId).emit('stream:chat', {
-        type:    'system',
-        message: `${userName} left`,
-        time:    new Date(),
-      });
     });
 
     // ── Live chat message ──
     socket.on('stream:chat', async ({ roomId, userId, userName, message }) => {
       const payload = { userId, userName, message, time: new Date(), type: 'message' };
-
-      // Broadcast to room
       io.to(roomId).emit('stream:chat', payload);
-
-      // Save to DB chat log
       try {
         await Stream.findOneAndUpdate(
           { roomId },
@@ -80,10 +64,6 @@ exports.socketHandler = (io) => {
     // ── Emoji reaction ──
     socket.on('stream:reaction', ({ roomId, emoji }) => {
       io.to(roomId).emit('stream:reaction', { emoji });
-    });
-
-      // Notify seller to send a WebRTC offer to this new viewer
-      socket.to(roomId).emit('webrtc:request-offer', { viewerId: socket.id });
     });
 
     // ── WebRTC signalling (Targeted) ──
