@@ -17,16 +17,25 @@ exports.getStreams = async (req, res) => {
   }
 };
 
-// GET single stream by roomId
+const mongoose = require('mongoose');
+
+// GET single stream by roomId or _id
 exports.getStream = async (req, res) => {
   try {
-    const stream = await Stream.findOne({ roomId: req.params.roomId })
+    const { roomId } = req.params;
+    const query = mongoose.Types.ObjectId.isValid(roomId) 
+      ? { $or: [{ _id: roomId }, { roomId }] }
+      : { roomId };
+
+    const stream = await Stream.findOne(query)
       .populate('seller', 'name storeName avatar isApproved')
       .populate('pinnedProduct', 'name price originalPrice stock images description')
       .populate('products', 'name price stock images');
+    
     if (!stream) return res.status(404).json({ message: 'Stream not found' });
     res.json(stream);
-  } catch {
+  } catch (err) {
+    console.error('getStream Error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
