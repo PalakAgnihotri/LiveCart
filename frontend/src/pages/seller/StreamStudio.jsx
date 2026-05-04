@@ -56,15 +56,40 @@ export default function StreamStudio() {
       toast.success(`🛍️ New order! ${order.productName} — ₹${order.amount}`)
     })
 
-    // WebRTC — when viewer sends answer back
-    on('webrtc:answer', ({ answer }) => {
-      Object.values(peersRef.current).forEach(peer => {
-        try { peer.signal(answer) } catch {}
+    // WebRTC — when a new viewer joins and asks for an offer
+    on('webrtc:request-offer', ({ viewerId }) => {
+      if (!streamRef.current) return
+      
+      const peer = new SimplePeer({
+        initiator: true,
+        trickle: false,
+        stream: streamRef.current,
+        config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
       })
+
+      peer.on('signal', offer => {
+        emit('webrtc:offer', { roomId: stream.roomId, offer, targetId: viewerId })
+      })
+
+      peer.on('error', err => {
+        console.error('Peer error:', err)
+        delete peersRef.current[viewerId]
+      })
+
+      peersRef.current[viewerId] = peer
+    })
+
+    // WebRTC — when a specific viewer sends an answer back
+    on('webrtc:answer', ({ answer, viewerId }) => {
+      const peer = peersRef.current[viewerId]
+      if (peer) {
+        try { peer.signal(answer) } catch (err) { console.error('Signal error:', err) }
+      }
     })
 
     return () => {
-      ;['stream:viewerCount','stream:chat','stream:newOrder','webrtc:answer'].forEach(ev => off(ev))
+      ;['stream:viewerCount','stream:chat','stream:newOrder','webrtc:request-offer','webrtc:answer'].forEach(ev => off(ev))
+      Object.values(peersRef.current).forEach(p => p.destroy())
     }
   }, [stream])
 
@@ -73,16 +98,7 @@ export default function StreamStudio() {
       await api.patch(`/streams/${stream._id}/go-live`)
       setIsLive(true)
       toast.success('🔴 You are now LIVE!')
-
-      // Emit WebRTC offer to all in room
       emit('stream:join', { roomId: stream.roomId, userId: user._id, userName: user.name + ' (Seller)' })
-
-      if (streamRef.current) {
-        const peer = new SimplePeer({ initiator: true, trickle: false, stream: streamRef.current })
-        peer.on('signal', offer => emit('webrtc:offer', { roomId: stream.roomId, offer }))
-        peer.on('error', () => {})
-        peersRef.current['broadcast'] = peer
-      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to go live')
     }

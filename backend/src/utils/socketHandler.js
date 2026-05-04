@@ -82,17 +82,21 @@ exports.socketHandler = (io) => {
       io.to(roomId).emit('stream:reaction', { emoji });
     });
 
-    // ── WebRTC signalling ──
-    socket.on('webrtc:offer', ({ roomId, offer }) => {
-      socket.to(roomId).emit('webrtc:offer', { from: socket.id, offer });
+      // Notify seller to send a WebRTC offer to this new viewer
+      socket.to(roomId).emit('webrtc:request-offer', { viewerId: socket.id });
+    });
+
+    // ── WebRTC signalling (Targeted) ──
+    socket.on('webrtc:offer', ({ targetId, offer }) => {
+      io.to(targetId).emit('webrtc:offer', { from: socket.id, offer });
     });
 
     socket.on('webrtc:answer', ({ to, answer }) => {
-      io.to(to).emit('webrtc:answer', { answer });
+      io.to(to).emit('webrtc:answer', { answer, viewerId: socket.id });
     });
 
-    socket.on('webrtc:ice', ({ roomId, candidate }) => {
-      socket.to(roomId).emit('webrtc:ice', { candidate });
+    socket.on('webrtc:ice', ({ targetId, candidate }) => {
+      io.to(targetId).emit('webrtc:ice', { candidate, from: socket.id });
     });
 
     socket.on('webrtc:end', ({ roomId }) => {

@@ -49,16 +49,15 @@ export default function StreamView() {
 
     // WebRTC — receive offer from seller
     on('webrtc:offer', ({ from, offer }) => {
-      navigator.mediaDevices.getUserMedia({ video: false, audio: false })
-        .catch(() => {})
-
-      const peer = new SimplePeer({ initiator: false, trickle: false })
+      const peer = new SimplePeer({
+        initiator: false,
+        trickle: false,
+        config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
+      })
       peerRef.current = peer
 
-      peer.signal(offer)
-
       peer.on('signal', answer => emit('webrtc:answer', { to: from, answer }))
-
+      
       peer.on('stream', remoteStream => {
         if (videoRef.current) {
           videoRef.current.srcObject = remoteStream
@@ -66,12 +65,22 @@ export default function StreamView() {
         }
       })
 
-      peer.on('error', () => {})
+      peer.on('error', err => {
+        console.error('Peer error:', err)
+        setConnected(false)
+      })
+
+      peer.signal(offer)
     })
 
-    on('webrtc:answer', ({ answer }) => peerRef.current?.signal(answer))
-    on('webrtc:ice',    ({ candidate }) => peerRef.current?.signal(candidate))
-    on('webrtc:end',    () => { setConnected(false); if (videoRef.current) videoRef.current.srcObject = null })
+    on('webrtc:ice', ({ candidate }) => {
+      try { peerRef.current?.signal(candidate) } catch {}
+    })
+    
+    on('webrtc:end', () => { 
+      setConnected(false)
+      if (videoRef.current) videoRef.current.srcObject = null 
+    })
 
     on('stream:viewerCount', setViewers)
     on('stream:chat',        msg  => setMessages(p => [...p.slice(-100), msg]))
