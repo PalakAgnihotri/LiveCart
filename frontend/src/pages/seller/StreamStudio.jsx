@@ -17,6 +17,7 @@ export default function StreamStudio() {
   const peersRef      = useRef({})
 
   const [stream, setStream]         = useState(null)
+  const [streamState, setStreamState] = useState(null)
   const [isLive, setIsLive]         = useState(false)
   const [viewers, setViewers]       = useState(0)
   const [messages, setMessages]     = useState([])
@@ -34,15 +35,33 @@ export default function StreamStudio() {
   }, [id])
 
   // Start camera
-  const startCamera = async () => {
-    try {
-      const media = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      streamRef.current = media
-      if (localVideoRef.current) localVideoRef.current.srcObject = media
-    } catch { toast.error('Camera/mic access denied') }
-  }
+  useEffect(() => {
+    const startCamera = async () => {
+      try {
+        const media = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        streamRef.current = media
+        setStreamState(media) // Using state to trigger re-render for the video element
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = media
+        }
+      } catch (err) { 
+        console.error('Camera Error:', err)
+        toast.error('Camera/mic access denied') 
+      }
+    }
+    startCamera()
 
-  useEffect(() => { startCamera() }, [])
+    return () => {
+      streamRef.current?.getTracks().forEach(t => t.stop())
+    }
+  }, [])
+
+  // Secondary check to ensure srcObject is set if the component re-renders
+  useEffect(() => {
+    if (localVideoRef.current && streamRef.current) {
+      localVideoRef.current.srcObject = streamRef.current
+    }
+  }, [localVideoRef.current, isLive])
 
   // Socket listeners
   useEffect(() => {
