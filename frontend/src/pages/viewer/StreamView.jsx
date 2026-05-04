@@ -45,7 +45,7 @@ export default function StreamView() {
   useEffect(() => {
     if (!stream || !user) return
 
-    emit('stream:join', { roomId, userId: user._id, userName: user.name })
+    emit('stream:join', { roomId: stream.roomId, userId: user._id, userName: user.name })
 
     // WebRTC — receive offer from seller
     on('webrtc:offer', ({ from, offer }) => {
@@ -96,7 +96,7 @@ export default function StreamView() {
     })
 
     return () => {
-      emit('stream:leave', { roomId, userName: user.name })
+      emit('stream:leave', { roomId: stream.roomId, userName: user.name })
       peerRef.current?.destroy()
       ;['webrtc:offer','webrtc:answer','webrtc:ice','webrtc:end','stream:viewerCount',
         'stream:chat','stream:pinProduct','stream:ended','stream:newOrder','stream:reaction'
@@ -106,12 +106,15 @@ export default function StreamView() {
 
   const sendChat = (e) => {
     e.preventDefault()
-    if (!chatInput.trim()) return
-    emit('stream:chat', { roomId, userId: user._id, userName: user.name, message: chatInput })
+    if (!chatInput.trim() || !stream) return
+    emit('stream:chat', { roomId: stream.roomId, userId: user._id, userName: user.name, message: chatInput })
     setChatInput('')
   }
 
-  const sendReaction = (emoji) => emit('stream:reaction', { roomId, emoji })
+  const sendReaction = (emoji) => {
+    if (!stream) return
+    emit('stream:reaction', { roomId: stream.roomId, emoji })
+  }
 
   const handleBuy = async () => {
     if (!pinnedProduct) return
