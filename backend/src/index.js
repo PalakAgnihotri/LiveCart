@@ -34,12 +34,9 @@ app.get('/api/health', (_, res) => res.json({ status: 'ok', app: 'LiveCart' }));
 
 socketHandler(io);
 
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`LiveCart server on port ${PORT}`));
+
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('MongoDB connected');
-    const PORT = process.env.PORT || 5000;
-    server.listen(PORT, () =>
-      console.log(`LiveCart server on http://localhost:${PORT}`)
-    );
-  })
-  .catch(err => console.error('MongoDB error:', err));
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB connection error:', err));
