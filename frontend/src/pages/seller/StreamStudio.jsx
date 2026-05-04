@@ -61,12 +61,14 @@ export default function StreamStudio() {
     }
   }, [])
 
-  // Assign stream to video element when ready
-  useEffect(() => {
-    if (localVideoRef.current && streamState) {
-      localVideoRef.current.srcObject = streamState
+  // Callback ref to handle video assignment reliably
+  const setVideoRef = (el) => {
+    if (el && streamState) {
+      el.srcObject = streamState
+      el.play().catch(e => console.error('Video play error:', e))
     }
-  }, [streamState])
+    localVideoRef.current = el
+  }
 
   // Socket listeners
   useEffect(() => {
@@ -181,12 +183,11 @@ export default function StreamStudio() {
         <div className="relative bg-black aspect-video flex items-center justify-center overflow-hidden">
           {streamState ? (
             <video 
-              ref={localVideoRef} 
+              ref={setVideoRef} 
               autoPlay 
               playsInline 
               muted 
-              className="w-full h-full object-cover scale-x-[-1]"
-              onLoadedMetadata={(e) => e.target.play()}
+              className="w-full h-full object-cover scale-x-[-1] bg-black"
             />
           ) : (
             <div className="flex flex-col items-center gap-4">
