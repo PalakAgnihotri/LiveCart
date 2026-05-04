@@ -37,8 +37,9 @@ socketHandler(io);
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
-    server.listen(process.env.PORT, () =>
-      console.log(`LiveCart server on http://localhost:${process.env.PORT}`)
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, () =>
+      console.log(`LiveCart server on http://localhost:${PORT}`)
     );
   })
   .catch(err => console.error('MongoDB error:', err));
